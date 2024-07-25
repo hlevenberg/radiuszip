@@ -60,7 +60,7 @@ def find_radius_zips(df, headers, radius):
                 pickle.dump(cache, cache_file)
                 cache_file.truncate()
                 cache_file.flush()
-            print(f"Completed: {((idx + 1) * 100)/ len(df.index):.2f}%")
+            print(f"Completed: {((idx + 1) * 100)/ len(df.index):.2f}%", end="\r")
     return df
 
 
