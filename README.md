@@ -1,6 +1,6 @@
 # Nearby Zip Code Finder
 
-Given a .csv file containing a
+Finds zip codes within a specified distance of a given list of zip codes from a csv file.
 
 ---
 
@@ -28,4 +28,4 @@ foo@bar:~$ python radius_zips.py -h # Gets Help File
 
 ---
 
-Created by @hlevenberg and @rgarber11.
+Created by [@hlevenberg](https://github.com/hlevenberg) and [@rgarber11](https://github.com/rgarber11).
