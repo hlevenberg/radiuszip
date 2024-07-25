@@ -41,10 +41,6 @@ def find_radius_zips(df, headers, radius):
     with open(f"cache{radius}.pickle", "r+b") as cache_file:
         cache = pickle.load(cache_file)
         # Ensure the 'zip' column exists
-        if "total_zips" not in df.columns:
-            raise KeyError(
-                "'total_zips' column not found in the CSV file. Please check the column name."
-            )
         for idx, row in df.iterrows():
             changed_cache = False
             zip_codes = [a.strip() for a in row["total_zips"].split(",")]
@@ -85,6 +81,10 @@ def main():
     )
     args = parser.parse_args()
     df = pd.read_csv(args.input_file[0])
+    if "total_zips" not in df.columns:
+        raise KeyError(
+            "'total_zips' column not found in the CSV file. Please check the column name."
+        )
     output_file_path = (
         f"{Path(args.input_file[0]).stem}.out.csv"
         if not args.output_file
