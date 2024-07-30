@@ -6,9 +6,6 @@ from pathlib import Path
 
 import pandas as pd
 import requests
-from numpy import require
-
-# Define the file paths
 
 # Define the API details
 URL = "https://zip-code-distance-radius.p.rapidapi.com/api/zipCodesWithinRadius"
@@ -32,6 +29,7 @@ def get_radius_zips(headers, zip_code, radius=10):
     return ""
 
 
+<<<<<<< HEAD
 def in_order_merge(lst_of_lsts):
     zip_codes = []
     for zip_code_list in lst_of_lsts:
@@ -43,13 +41,40 @@ def in_order_merge(lst_of_lsts):
 
 # Apply the function to the zip column and create the radius_zips column
 # Write the modified DataFrame to a new CSV file
+=======
+def correct_zip_code(zip_code):
+    zip_str = str(zip_code)
+    if zip_str.endswith(".0"):
+        zip_str = zip_str[:-2]
+    return zip_str.rjust(5, "0")
+
+
+def create_provider_dict(df, col_name):
+    provider_dict = {}
+    for _, row in df.iterrows():
+        zip_code = row["zip_code"]
+        if zip_code not in provider_dict:
+            provider_dict[zip_code] = []
+        provider_dict[zip_code].append(row[col_name].upper())
+    return provider_dict
+
+
+def create_provider_row(zips_str, provider_dict):
+    providers = []
+    zips = [zip_code.strip() for zip_code in zips_str.split(",")]
+    for zip_code in zips:
+        if zip_code in provider_dict:
+            providers.extend(provider_dict[zip_code])
+    return ", ".join(providers)
+
+
+>>>>>>> 12c413e (Add standard provider row code functions)
 def find_radius_zips(df, headers, radius):
     if not Path(f"cache{radius}.pickle").exists():
         with open(f"cache{radius}.pickle", "wb") as cache_maker:
             pickle.dump(dict(), cache_maker)
     with open(f"cache{radius}.pickle", "r+b") as cache_file:
         cache = pickle.load(cache_file)
-        # Ensure the 'zip' column exists
         for idx, row in df.iterrows():
             changed_cache = False
             zip_codes = [a.strip() for a in row["total_zips"].split(",")]
@@ -73,7 +98,6 @@ def main():
     parser = argparse.ArgumentParser(
         prog="radius_zips",
         description="Read A CSV describing different cities, and return all zip codes within a radius",
-        epilog="Have fun Henry!",
     )
     parser.add_argument("input_file", help="Input CSV File", nargs=1)
     parser.add_argument(
@@ -102,7 +126,6 @@ def main():
     with open("secrets.json", "r") as secrets:
         headers: dict[str, str] = json.load(secrets)
 
-    # Print the first fewr rows to inspect the 'zip' column
     df = find_radius_zips(df, headers, args.radius)
     df.to_csv(output_file_path, index=False)
 
