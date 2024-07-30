@@ -49,13 +49,13 @@ def correct_zip_code(zip_code):
     return zip_str.rjust(5, "0")
 
 
-def create_provider_dict(df, col_name):
+def create_provider_dict(df, provider_col_name, zip_col_name):
     provider_dict = {}
     for _, row in df.iterrows():
-        zip_code = row["zip_code"]
+        zip_code = row[zip_col_name]
         if zip_code not in provider_dict:
             provider_dict[zip_code] = []
-        provider_dict[zip_code].append(row[col_name].upper())
+        provider_dict[zip_code].append(row[provider_col_name].upper())
     return provider_dict
 
 
