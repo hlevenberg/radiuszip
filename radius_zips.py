@@ -3,9 +3,24 @@ import argparse
 import json
 import pickle
 from pathlib import Path
+from typing import NamedTuple
 
 import pandas as pd
 import requests
+
+
+class Provider(NamedTuple):
+    file_name: str
+    name_column: str
+    zip_column: str
+    output_column: str
+
+
+def create_provider(dct):
+    zip_col = dct["zip_column"] if "zip_column" in dct else "zip_code"
+    output_col = dct["output_column"] if "output_column" in dct else dct["name_column"]
+    return Provider(dct["file_name"], dct["name_column"], zip_col, output_col)
+
 
 # Define the API details
 URL = "https://zip-code-distance-radius.p.rapidapi.com/api/zipCodesWithinRadius"
@@ -106,27 +121,57 @@ def main():
         nargs="?",
     )
     parser.add_argument(
+        "-s",
+        "--search",
+        action="store_true",
+        help="Run radius search, accessing the distance API",
+    )
+    parser.add_argument(
         "-r",
         "--radius",
         type=int,
         default=10,
-        help="Radius in miles within which to search for Zip Codes",
+        help="Radius in miles within which to search for Zip Codes. Does nothing without -s",
     )
     args = parser.parse_args()
     df = pd.read_csv(args.input_file[0])
-    if "total_zips" not in df.columns:
-        raise KeyError(
-            "'total_zips' column not found in the CSV file. Please check the column name."
-        )
+    if args.search:
+        if "total_zips" not in df.columns:
+            raise KeyError(
+                "'total_zips' column not found in the CSV file. Please check the column name."
+            )
+        with open("secrets.json", "r") as secrets:
+            headers: dict[str, str] = json.load(secrets)
+
+        df = find_radius_zips(df, headers, args.radius)
     output_file_path = (
         f"{Path(args.input_file[0]).stem}.out.csv"
         if not args.output_file
         else args.output_file
     )
-    with open("secrets.json", "r") as secrets:
-        headers: dict[str, str] = json.load(secrets)
+    if Path("providers.json").exists():
+        if "radius_zips" not in df.columns:
+            raise KeyError("'radius_zips' necessary for Provider column creation")
+        with open("providers.json", "r") as provider_file:
+            providers: list[Provider] = json.load(
+                provider_file, object_hook=create_provider
+            )
+        for provider in providers:
+            if not Path(provider.file_name).exists():
+                print(f"File {provider.file_name} does not exist!")
+                continue
+            provider_df = pd.read_csv(provider.file_name)
+            provider_df[provider.zip_column] = provider_df[provider.zip_column].apply(
+                correct_zip_code
+            )
+            provider_dict = create_provider_dict(
+                provider_df, provider.name_column, provider.zip_column
+            )
+            df[provider.output_column] = df.apply(
+                lambda row: create_provider_row(row["radius_zips"], provider_dict),
+                axis=1,
+            )
 
-    df = find_radius_zips(df, headers, args.radius)
     df.to_csv(output_file_path, index=False)
 
 
