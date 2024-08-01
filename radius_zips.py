@@ -32,6 +32,15 @@ def get_radius_zips(headers, zip_code, radius=10):
     return ""
 
 
+def in_order_merge(lst_of_lsts):
+    zip_codes = []
+    for zip_code_list in lst_of_lsts:
+        for zip_code in zip_code_list:
+            if zip_code not in zip_codes:
+                zip_codes.append(zip_code)
+    return zip_codes
+
+
 # Apply the function to the zip column and create the radius_zips column
 # Write the modified DataFrame to a new CSV file
 def find_radius_zips(df, headers, radius):
@@ -49,7 +58,7 @@ def find_radius_zips(df, headers, radius):
                     cache[zip_code] = get_radius_zips(headers, zip_code, radius)
                     changed_cache = True
             df.loc[idx, "radius_zips"] = ",".join(
-                cache[zip_code] for zip_code in zip_codes
+                in_order_merge(cache[zip_code] for zip_code in zip_codes)
             )
             if changed_cache:
                 cache_file.seek(0)
