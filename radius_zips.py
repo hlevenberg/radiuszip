@@ -44,19 +44,17 @@ def get_radius_zips(headers, zip_code, radius=10):
     return ""
 
 
-<<<<<<< HEAD
 def in_order_merge(lst_of_lsts):
-    zip_codes = []
-    for zip_code_list in lst_of_lsts:
-        for zip_code in zip_code_list:
-            if zip_code not in zip_codes:
-                zip_codes.append(zip_code)
-    return zip_codes
+    merged_iter = []
+    for intermediate_iter in lst_of_lsts:
+        for item in intermediate_iter:
+            if item not in merged_iter:
+                merged_iter.append(item)
+    return merged_iter
 
 
 # Apply the function to the zip column and create the radius_zips column
 # Write the modified DataFrame to a new CSV file
-=======
 def correct_zip_code(zip_code):
     zip_str = str(zip_code)
     if zip_str.endswith(".0"):
@@ -75,15 +73,14 @@ def create_provider_dict(df, provider_col_name, zip_col_name):
 
 
 def create_provider_row(zips_str, provider_dict):
-    providers = []
     zips = [zip_code.strip() for zip_code in zips_str.split(",")]
-    for zip_code in zips:
-        if zip_code in provider_dict:
-            providers.extend(provider_dict[zip_code])
-    return ", ".join(providers)
+    return ", ".join(
+        in_order_merge(
+            provider_dict[zip_code] for zip_code in zips if zip_code in provider_dict
+        )
+    )
 
 
->>>>>>> 12c413e (Add standard provider row code functions)
 def find_radius_zips(df, headers, radius):
     if not Path(f"cache{radius}.pickle").exists():
         with open(f"cache{radius}.pickle", "wb") as cache_maker:
