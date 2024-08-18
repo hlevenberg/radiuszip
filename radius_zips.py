@@ -2,8 +2,9 @@
 import argparse
 import json
 import pickle
+from collections.abc import Iterable, Mapping
 from pathlib import Path
-from typing import NamedTuple
+from typing import NamedTuple, TypeVar
 
 import pandas as pd
 import requests
@@ -16,7 +17,7 @@ class Provider(NamedTuple):
     output_column: str
 
 
-def create_provider(dct):
+def create_provider(dct: Mapping[str, str]):
     zip_col = dct["zip_column"] if "zip_column" in dct else "zip_code"
     output_col = dct["output_column"] if "output_column" in dct else dct["name_column"]
     return Provider(dct["file_name"], dct["name_column"], zip_col, output_col)
@@ -27,7 +28,7 @@ URL = "https://zip-code-distance-radius.p.rapidapi.com/api/zipCodesWithinRadius"
 
 
 # Function to get zip codes within a radius for a given zip code
-def get_radius_zips(headers, zip_code, radius=10):
+def get_radius_zips(headers: Mapping[str, str], zip_code: str, radius: int = 10):
     try:
         response = requests.get(
             URL,
@@ -35,7 +36,7 @@ def get_radius_zips(headers, zip_code, radius=10):
             params={"zipCode": zip_code, "radius": radius},
         )
         response.raise_for_status()
-        data = response.json()
+        data: list[Mapping[str, str]] = response.json()
         return ", ".join(item["zipCode"] for item in data if "zipCode" in item)
     except requests.exceptions.RequestException as e:
         print(f"Error fetching data for zip code {zip_code}: {e}")
@@ -44,8 +45,11 @@ def get_radius_zips(headers, zip_code, radius=10):
     return ""
 
 
-def in_order_merge(lst_of_lsts):
-    merged_iter = []
+T = TypeVar("T")
+
+
+def in_order_merge(lst_of_lsts: Iterable[Iterable[T]]):
+    merged_iter: list[T] = []
     for intermediate_iter in lst_of_lsts:
         for item in intermediate_iter:
             if item not in merged_iter:
@@ -63,16 +67,16 @@ def correct_zip_code(zip_code):
 
 
 def create_provider_dict(df, provider_col_name, zip_col_name):
-    provider_dict = {}
+    provider_dict: dict[str, list[str]] = {}
     for _, row in df.iterrows():
-        zip_code = row[zip_col_name]
+        zip_code: str = row[zip_col_name]
         if zip_code not in provider_dict:
             provider_dict[zip_code] = []
         provider_dict[zip_code].append(row[provider_col_name].upper())
     return provider_dict
 
 
-def create_provider_row(zips_str, provider_dict):
+def create_provider_row(zips_str: str, provider_dict: Mapping[str, list[str]]) -> str:
     zips = [zip_code.strip() for zip_code in zips_str.split(",")]
     return ", ".join(
         in_order_merge(
